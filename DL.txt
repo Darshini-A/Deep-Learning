@@ -276,6 +276,7 @@ encoder = LabelEncoder()
 encoder.fit(Y)
 encoded_Y = encoder.transform(Y)
 
+
 # baseline model
 def create_baseline():
 	# create model
@@ -300,6 +301,7 @@ pipeline = Pipeline(estimators)
 kfold = StratifiedKFold(n_splits=10, shuffle=True)
 results = cross_val_score(pipeline, X, encoded_Y, cv=kfold)
 print("Standardized: %.2f%% (%.2f%%)" % (results.mean()*100, results.std()*100))
+
 
 # smaller model
 def create_smaller():
@@ -456,7 +458,6 @@ X = data_frame.drop(columns='label', axis=1)
 Y = data_frame['label']
 
 print(X)
-
 print(Y)
 
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=2)
@@ -490,7 +491,6 @@ plt.ylabel('accuracy')
 plt.xlabel('epoch')
 plt.legend(['training data', 'validation data'], loc = 'lower right')
 
-
 plt.plot(history.history['loss'])
 plt.plot(history.history['val_loss'])
 plt.title('model loss')
@@ -517,11 +517,8 @@ mnist = tf.keras.datasets.mnist
 (X_train, y_train), (X_test, y_test) = mnist.load_data()
 
 X_train.shape
-
 y_train.shape
-
 X_test.shape
-
 y_test.shape
 
 import matplotlib.pyplot as plt
@@ -656,8 +653,3 @@ pyplot.title('model loss vs accuracy')
 pyplot.xlabel('epoch')
 pyplot.legend(['loss', 'accuracy'], loc='upper right')
 pyplot.show()
-
-
-
-
-
