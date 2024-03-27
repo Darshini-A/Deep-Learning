@@ -1,0 +1,663 @@
+PRACTICAL NO.1 (GRADIENT DESCENT)
+# Demonstrate Gradient descent and the back propagation algorithm
+
+1st method
+# Solving using basic function 
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Generate synthetic data
+np.random.seed(42)
+X = np.random.rand(2, 100)  # Two features, 100 data points
+Y = np.random.randint(0, 2, (1, 100))  # Binary target
+
+# Hyperparameters
+input_size = X.shape[0]
+hidden_size = 4
+output_size = 1
+learning_rate = 0.01
+epochs = 1000
+
+# Sigmoid activation function and its derivative
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+def sigmoid_derivative(x):
+    return x * (1 - x)
+
+# Initialize parameters
+def initialize_parameters(input_size, hidden_size, output_size):
+    np.random.seed(42)
+    W_hidden = np.random.rand(hidden_size, input_size)
+    b_hidden = np.zeros((hidden_size, 1))
+    W_output = np.random.rand(output_size, hidden_size)
+    b_output = np.zeros((output_size, 1))
+
+    return W_hidden, b_hidden, W_output, b_output
+
+# Forward propagation
+def forward_propagation(X, W_hidden, b_hidden, W_output, b_output):
+    Z_hidden = np.dot(W_hidden, X) + b_hidden
+    A_hidden = sigmoid(Z_hidden)
+    Z_output = np.dot(W_output, A_hidden) + b_output
+    A_output = sigmoid(Z_output)
+
+    return Z_hidden, A_hidden, Z_output, A_output
+
+# Compute loss
+def compute_loss(A_output, Y):
+    m = Y.shape[1]
+    loss = - (1 / m) * np.sum(Y * np.log(A_output) + (1 - Y) * np.log(1 - A_output))
+    return loss
+
+# Backward propagation
+def backward_propagation(X, Y, Z_hidden, A_hidden, Z_output, A_output, W_output):
+    m = Y.shape[1]
+
+    dZ_output = A_output - Y
+    dW_output = (1 / m) * np.dot(dZ_output, A_hidden.T)
+    db_output = (1 / m) * np.sum(dZ_output, axis=1, keepdims=True)
+
+    dZ_hidden = np.dot(W_output.T, dZ_output) * sigmoid_derivative(A_hidden)
+    dW_hidden = (1 / m) * np.dot(dZ_hidden, X.T)
+    db_hidden = (1 / m) * np.sum(dZ_hidden, axis=1, keepdims=True)
+
+    return dW_hidden, db_hidden, dW_output, db_output
+
+# Update parameters
+def update_parameters(W_hidden, b_hidden, W_output, b_output, dW_hidden, db_hidden, dW_output, db_output, learning_rate):
+    W_hidden -= learning_rate * dW_hidden
+    b_hidden -= learning_rate * db_hidden
+    W_output -= learning_rate * dW_output
+    b_output -= learning_rate * db_output
+
+    return W_hidden, b_hidden, W_output, b_output
+
+# Train the neural network
+def train_neural_network(X, Y, hidden_size, output_size, learning_rate, epochs):
+    input_size = X.shape[0]
+    W_hidden, b_hidden, W_output, b_output = initialize_parameters(input_size, hidden_size, output_size)
+
+    for epoch in range(epochs):
+        # Forward propagation
+        Z_hidden, A_hidden, Z_output, A_output = forward_propagation(X, W_hidden, b_hidden, W_output, b_output)
+
+        # Compute loss
+        loss = compute_loss(A_output, Y)
+
+        # Backward propagation
+        dW_hidden, db_hidden, dW_output, db_output = backward_propagation(X, Y, Z_hidden, A_hidden, Z_output, A_output, W_output)
+
+        # Update parameters
+        W_hidden, b_hidden, W_output, b_output = update_parameters(W_hidden, b_hidden, W_output, b_output, dW_hidden, db_hidden, dW_output, db_output, learning_rate)
+
+        # Print the loss every 100 epochs
+        if epoch % 100 == 0:
+            print(f"Epoch {epoch}, Loss: {loss}")
+
+    return W_hidden, b_hidden, W_output, b_output
+
+# Train the neural network
+trained_parameters = train_neural_network(X, Y, hidden_size, output_size, learning_rate, epochs)
+
+# Test the trained network with new data
+def predict(X, W_hidden, b_hidden, W_output, b_output):
+    _, _, _, A_output = forward_propagation(X, W_hidden, b_hidden, W_output, b_output)
+    predictions = (A_output > 0.5).astype(int)
+    return predictions
+
+# Generate new test data
+X_test = np.random.rand(2, 10)
+predictions = predict(X_test, *trained_parameters)
+
+# Display the results
+print("\nPredictions:")
+print(predictions)
+
+
+********************************************************
+
+
+2nd method
+# Solving using tensorflow framework
+
+import tensorflow as tf
+import numpy as np
+
+# Generate synthetic data
+np.random.seed(42)
+X = np.random.rand(100, 2)  # Two features, 100 data points
+Y = np.random.randint(0, 2, (100, 1))  # Binary target
+
+# Hyperparameters
+input_size = 2
+hidden_size = 4
+output_size = 1
+learning_rate = 0.01
+epochs = 1000
+
+# Build the model
+model = tf.keras.Sequential([
+    tf.keras.layers.Dense(hidden_size, activation='sigmoid', input_shape=(input_size,), name='hidden_layer'),
+    tf.keras.layers.Dense(output_size, activation='sigmoid', name='output_layer')
+])
+
+model.summary()
+
+# Compile the model
+model.compile(optimizer=tf.keras.optimizers.SGD(learning_rate=learning_rate),
+              loss=tf.keras.losses.BinaryCrossentropy(),
+              metrics=['accuracy'])
+
+# Train the model
+history = model.fit(X, Y, epochs=epochs,verbose=0)
+
+# Evaluate the model
+loss, accuracy = model.evaluate(X, Y)
+print(f'\nFinal Loss: {loss}, Final Accuracy: {accuracy}')
+
+# Plot the loss over epochs
+plt.plot(history.history['loss'])
+plt.title('Model Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.show()
+
+# Test the trained model with new data
+X_test = np.random.rand(10, 2)
+predictions = model.predict(X_test)
+binary_predictions = (predictions > 0.5).astype(int)
+
+# Display the results
+print("\nPredictions:")
+print(binary_predictions)
+
+
+
+*********************************************************************************
+
+
+
+PRACTICAL NO. 2 (Eigen Values Eigen vectors)
+
+1st method
+# using NumPy library
+
+# 2-D array
+
+import numpy as np
+
+m = np.array([[1, 2],
+              [2, 3]])
+
+print("Printing the square array :\n", m)
+print('\n---------------------------------------------------------------------------------------')
+
+w, v = np.linalg.eig(m)
+
+print("\nPrinting the Eigen Values of the square array :\n", w)
+print("\nPrinting the Right Eigen Vectors of the square array :\n", v)
+
+
+# 3-D array
+
+import numpy as np
+
+n = np.array([[1, 2, 3],
+              [2, 3, 4],
+              [4, 5, 6]])
+
+print("Printing the square array:\n", n)
+print('\n---------------------------------------------------------------------------------------')
+
+a, b = np.linalg.eig(n)
+
+print("\nPrinting the Eigen Values of the square array :\n", a)
+print("\nPrinting the Right Eigen Vectors of the square array :\n", b)
+
+
+**********************************
+
+
+2nd method
+# using tensorflow
+
+# 2-D array using tensorflow
+
+import tensorflow as tf
+
+e_matrix_A = tf.random.uniform([2, 2], minval=3, maxval=10, dtype=tf.float32, name="matrixA")
+print("Matrix A: \n{}\n".format(e_matrix_A))
+
+eigen_values_A, eigen_vectors_A = tf.linalg.eigh(e_matrix_A)
+print("Eigen Vectors of Matrix A : \n{} \n\nEigen Values of Matrix A : \n{}\n".format(eigen_vectors_A, eigen_values_A))
+ 
+
+# 3-D array using tensorflow
+
+import tensorflow as tf
+
+e_matrix_B = tf.random.uniform([3, 3], minval=3, maxval=10, dtype=tf.float32, name="matrixB")
+print("Matrix B: \n{}\n".format(e_matrix_B))
+
+eigen_values_B, eigen_vectors_B = tf.linalg.eigh(e_matrix_B)
+print("Eigen Vectors of Matrix B : \n{} \n\nEigen Values of Matrix B : \n{}\n".format(eigen_vectors_B, eigen_values_B))
+ 
+
+
+******************************************************************
+
+
+
+PRACTICAL NO. 3 (deep neural network for binary classification)
+
+!pip install keras==2.12.0
+
+import pandas as pd
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.wrappers.scikit_learn import KerasClassifier
+from sklearn.model_selection import cross_val_score
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import StratifiedKFold
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+
+dataframe = pd.read_csv("/content/sonar.all-data", header=None)
+dataset = dataframe.values
+
+# split into input (X) and output (Y) variables
+X = dataset[:,0:60].astype(float)
+Y = dataset[:,60]
+
+# encode class values as integers
+encoder = LabelEncoder()
+encoder.fit(Y)
+encoded_Y = encoder.transform(Y)
+
+# baseline model
+def create_baseline():
+	# create model
+	model = Sequential()
+	model.add(Dense(60, input_dim=60, activation='relu'))
+	model.add(Dense(1, activation='sigmoid'))
+	# Compile model
+	model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+	return model
+
+# evaluate model with standardized dataset
+estimator = KerasClassifier(build_fn=create_baseline, epochs=100, batch_size=5, verbose=0)
+kfold = StratifiedKFold(n_splits=10, shuffle=True)
+results = cross_val_score(estimator, X, encoded_Y, cv=kfold)
+print("Baseline: %.2f%% (%.2f%%)" % (results.mean()*100, results.std()*100))
+
+# evaluate baseline model with standardized dataset
+estimators = []
+estimators.append(('standardize', StandardScaler()))
+estimators.append(('mlp', KerasClassifier(build_fn=create_baseline, epochs=100, batch_size=5, verbose=0)))
+pipeline = Pipeline(estimators)
+kfold = StratifiedKFold(n_splits=10, shuffle=True)
+results = cross_val_score(pipeline, X, encoded_Y, cv=kfold)
+print("Standardized: %.2f%% (%.2f%%)" % (results.mean()*100, results.std()*100))
+
+# smaller model
+def create_smaller():
+	# create model
+	model = Sequential()
+	model.add(Dense(30, input_dim=60, activation='relu'))
+	model.add(Dense(1, activation='sigmoid'))
+	# Compile model
+	model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+	return model
+
+estimators = []
+estimators.append(('standardize', StandardScaler()))
+estimators.append(('mlp', KerasClassifier(build_fn=create_smaller, epochs=100, batch_size=5, verbose=0)))
+pipeline = Pipeline(estimators)
+kfold = StratifiedKFold(n_splits=10, shuffle=True)
+results = cross_val_score(pipeline, X, encoded_Y, cv=kfold)
+print("Smaller: %.2f%% (%.2f%%)" % (results.mean()*100, results.std()*100))
+
+
+# larger model
+def create_larger():
+	# create model
+	model = Sequential()
+	model.add(Dense(60, input_dim=60, activation='relu'))
+	model.add(Dense(30, activation='relu'))
+	model.add(Dense(1, activation='sigmoid'))
+	# Compile model
+	model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+	return model
+estimators = []
+estimators.append(('standardize', StandardScaler()))
+estimators.append(('mlp', KerasClassifier(build_fn=create_larger, epochs=100, batch_size=5, verbose=0)))
+pipeline = Pipeline(estimators)
+kfold = StratifiedKFold(n_splits=10, shuffle=True)
+results = cross_val_score(pipeline, X, encoded_Y, cv=kfold)
+print("Larger: %.2f%% (%.2f%%)" % (results.mean()*100, results.std()*100))
+
+
+
+*****************************************************************************
+
+
+
+PRACTICAL NO. 4 (XOR deep forward network)
+
+import numpy as np
+
+# define Unit Step Function
+def unitStep(v):
+    if v >= 0:
+        return 1
+    else:
+        return 0
+
+# design Perceptron Model
+def perceptronModel(x, w, b):
+    v = np.dot(w, x) + b
+    y = unitStep(v)
+    return y
+
+# NOT Logic Function
+# wNOT = -1, bNOT = 0.5
+
+def NOT_logicFunction(x):
+    wNOT = -1
+    bNOT = 0.5
+    return perceptronModel(x, wNOT, bNOT)
+
+# AND Logic Function
+# here w1 = wAND1 = 1,
+# w2 = wAND2 = 1, bAND = -1.5
+
+def AND_logicFunction(x):
+    w = np.array([1, 1])
+    bAND = -1.5
+    return perceptronModel(x, w, bAND)
+
+
+# OR Logic Function
+# w1 = 1, w2 = 1, bOR = -0.5
+
+def OR_logicFunction(x):
+    w = np.array([1, 1])
+    bOR = -0.5
+    return perceptronModel(x, w, bOR)
+
+
+# XOR Logic Function
+# with AND, OR and NOT
+# function calls in sequence
+def XOR_logicFunction(x):
+  y1 = AND_logicFunction(x)
+  y2 = OR_logicFunction(x)
+  y3 = NOT_logicFunction(y1)
+  final_x = np.array([y2, y3])
+  finalOutput = AND_logicFunction(final_x)
+  y3 = NOT_logicFunction(y1)
+  return finalOutput
+
+test1 = np.array([0, 0])
+test2 = np.array([0, 1])
+test3 = np.array([1, 0])
+test4 = np.array([1, 1])
+
+print("XOR({}, {}) = {}".format(0, 0, XOR_logicFunction(test1)))
+print("XOR({}, {}) = {}".format(0, 1, XOR_logicFunction(test2)))
+print("XOR({}, {}) = {}".format(1, 0, XOR_logicFunction(test3)))
+print("XOR({}, {}) = {}".format(1, 1, XOR_logicFunction(test4)))
+
+
+
+*******************************************************************
+
+
+
+PRACTICAL NO. 5 (simple neural network)
+#Implementing breast cancer with a simple neural network
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import sklearn.datasets
+from sklearn.model_selection import train_test_split
+
+breast_cancer_dataset = sklearn.datasets.load_breast_cancer()
+print(breast_cancer_dataset)
+
+data_frame = pd.DataFrame(breast_cancer_dataset.data, columns = breast_cancer_dataset.feature_names)
+data_frame.head()
+
+# adding the 'target' column to the data frame
+data_frame['label'] = breast_cancer_dataset.target
+data_frame.tail()
+
+# number of rows and columns in the dataset
+data_frame.shape
+
+data_frame.info()
+
+# checking for missing values
+data_frame.isnull().sum()
+
+# statistical measures about the data
+data_frame.describe()
+
+# checking the distribution of Target Varibale
+data_frame['label'].value_counts()
+
+data_frame.groupby('label').mean()
+
+#Separating the features and target
+X = data_frame.drop(columns='label', axis=1)
+Y = data_frame['label']
+
+print(X)
+
+print(Y)
+
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=2)
+print(X.shape, X_train.shape, X_test.shape)
+
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+X_train_std = scaler.fit_transform(X_train)
+X_test_std = scaler.transform(X_test)
+
+import tensorflow as tf
+tf.random.set_seed(3)
+from tensorflow import keras
+
+model = keras.Sequential([
+                          keras.layers.Flatten(input_shape=(30,)),
+                          keras.layers.Dense(20, activation='relu'),
+                          keras.layers.Dense(2, activation='sigmoid')
+])
+
+model.compile(optimizer='adam',
+              loss='sparse_categorical_crossentropy',
+              metrics=['accuracy'])
+
+history = model.fit(X_train_std, Y_train, validation_split=0.1, epochs=10)
+
+plt.plot(history.history['accuracy'])
+plt.plot(history.history['val_accuracy'])
+plt.title('model accuracy')
+plt.ylabel('accuracy')
+plt.xlabel('epoch')
+plt.legend(['training data', 'validation data'], loc = 'lower right')
+
+
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('model loss')
+plt.ylabel('loss')
+plt.xlabel('epoch')
+plt.legend(['training data', 'validation data'], loc = 'upper right')
+
+loss, accuracy = model.evaluate(X_test_std, Y_test)
+print(accuracy)
+
+
+
+*****************************************************************************
+
+
+
+PRACTICAL No.6 (CNN)
+#Implementation of convolutional neural network to predict numbers from number images
+
+import tensorflow as tf
+
+mnist = tf.keras.datasets.mnist
+
+(X_train, y_train), (X_test, y_test) = mnist.load_data()
+
+X_train.shape
+
+y_train.shape
+
+X_test.shape
+
+y_test.shape
+
+import matplotlib.pyplot as plt
+plt.imshow(X_train[2])
+plt.show()
+plt.imshow(X_train[2], cmap=plt.cm.binary)
+
+X_train[2]
+
+#Normalizing the data
+X_train = tf.keras.utils.normalize(X_train, axis=1)
+X_test = tf.keras.utils.normalize(X_test, axis=1)
+plt.imshow(X_train[2], cmap=plt.cm.binary)
+
+print(X_train[2])
+
+import tensorflow as tf
+import tensorflow.keras.layers  as KL
+import tensorflow.keras.models  as KM
+
+## Model
+inputs = KL.Input(shape=(28, 28, 1))
+c = KL.Conv2D(32, (3, 3), padding="valid", activation=tf.nn.relu)(inputs)
+m = KL.MaxPool2D((2, 2), (2, 2))(c)
+d = KL.Dropout(0.5)(m)
+c = KL.Conv2D(64, (3, 3), padding="valid", activation=tf.nn.relu)(d)
+m = KL.MaxPool2D((2, 2), (2, 2))(c)
+d = KL.Dropout(0.5)(m)
+c = KL.Conv2D(128, (3, 3), padding="valid", activation=tf.nn.relu)(d)
+f = KL.Flatten()(c)
+outputs = KL.Dense(10, activation=tf.nn.softmax)(f)
+model = KM.Model(inputs, outputs)
+model.summary()
+model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
+
+model.fit(X_train, y_train, epochs=5)
+test_loss, test_acc = model.evaluate(X_test, y_test)
+print("Test Loss: {0} - Test Acc: {1}".format(test_loss, test_acc))
+
+
+
+*********************************************************************************
+
+
+
+PRACTICAL NO. 07 (RNN)
+#Implementing RNN model using MNIST dataset
+
+!pip install tensorflow
+
+import tensorflow as tf
+from tensorflow.keras import layers, models
+from tensorflow.keras.datasets import mnist
+from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.layers import LSTM, Embedding, Dense
+
+# Load and preprocess the MNIST dataset (flatten the images for RNN)
+(train_images, train_labels), (test_images, test_labels) = mnist.load_data()
+train_images = train_images.reshape((60000, 784))
+train_images = train_images.astype('float32') / 255
+test_images = test_images.reshape((10000, 784))
+test_images = test_images.astype('float32') / 255
+train_labels = to_categorical(train_labels)
+test_labels = to_categorical(test_labels)
+
+rnn_model = models.Sequential()
+rnn_model.add(Embedding(input_dim=784, output_dim=128))
+rnn_model.add(LSTM(64))
+rnn_model.add(Dense(10, activation='softmax'))
+
+rnn_model.compile(optimizer='adam',
+                  loss='categorical_crossentropy',
+                  metrics=['accuracy'])
+
+rnn_model.summary()
+
+rnn_history = rnn_model.fit(train_images, train_labels, epochs=5, batch_size=64,
+                            validation_data=(test_images, test_labels))
+
+test_loss, test_acc = rnn_model.evaluate(test_images, test_labels)
+print(f'RNN Test Accuracy: {test_acc}')
+
+
+
+*****************************************************************************
+
+
+
+PRACTICAL NO. 8 (LSTM)
+#Text classification of moviie review using BI LSTM
+
+import numpy as np
+from keras.models import Sequential
+from keras.preprocessing import sequence
+from keras.layers import Dropout
+from keras.layers import  Dense, Embedding, LSTM, Bidirectional
+
+from keras.datasets import imdb
+(x_train, y_train),(x_test, y_test) = imdb.load_data(num_words=10000)
+
+max_len = 200
+x_train = sequence.pad_sequences(x_train, maxlen=max_len)
+x_test = sequence.pad_sequences(x_test, maxlen=max_len)
+y_test = np.array(y_test)
+y_train = np.array(y_train)
+
+x_train.shape, y_train.shape
+
+x_test.shape, y_test.shape
+
+n_unique_words= 10000
+
+model = Sequential()
+model.add(Embedding(n_unique_words, 128, input_length=max_len))
+model.add(Bidirectional(LSTM(64)))
+model.add(Dropout(0.5))
+model.add(Dense(1, activation='sigmoid'))
+model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+
+history=model.fit(x_train, y_train,
+           batch_size=300,
+           epochs=5,
+           validation_data=[x_test, y_test])
+
+print(history.history['loss'])
+print(history.history['accuracy'])
+
+from matplotlib import pyplot
+pyplot.plot(history.history['loss'])
+pyplot.plot(history.history['accuracy'])
+pyplot.title('model loss vs accuracy')
+pyplot.xlabel('epoch')
+pyplot.legend(['loss', 'accuracy'], loc='upper right')
+pyplot.show()
+
+
+
+
+
