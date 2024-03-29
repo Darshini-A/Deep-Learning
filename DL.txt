@@ -112,8 +112,7 @@ X_test = np.random.rand(2, 10)
 predictions = predict(X_test, *trained_parameters)
 
 # Display the results
-print("\nPredictions:")
-print(predictions)
+print(f'Predictions : \n{predictions}')
 
 
 ********************************************************
@@ -170,8 +169,7 @@ predictions = model.predict(X_test)
 binary_predictions = (predictions > 0.5).astype(int)
 
 # Display the results
-print("\nPredictions:")
-print(binary_predictions)
+print(f'Predictions : \n{binary_predictions}')
 
 
 
@@ -291,7 +289,7 @@ def create_baseline():
 estimator = KerasClassifier(build_fn=create_baseline, epochs=100, batch_size=5, verbose=0)
 kfold = StratifiedKFold(n_splits=10, shuffle=True)
 results = cross_val_score(estimator, X, encoded_Y, cv=kfold)
-print("Baseline: %.2f%% (%.2f%%)" % (results.mean()*100, results.std()*100))
+print("Baseline : %.2f%% (%.2f%%)" % (results.mean()*100, results.std()*100))
 
 # evaluate baseline model with standardized dataset
 estimators = []
@@ -300,7 +298,7 @@ estimators.append(('mlp', KerasClassifier(build_fn=create_baseline, epochs=100, 
 pipeline = Pipeline(estimators)
 kfold = StratifiedKFold(n_splits=10, shuffle=True)
 results = cross_val_score(pipeline, X, encoded_Y, cv=kfold)
-print("Standardized: %.2f%% (%.2f%%)" % (results.mean()*100, results.std()*100))
+print("Standardized Baseline : %.2f%% (%.2f%%)" % (results.mean()*100, results.std()*100))
 
 
 # smaller model
@@ -319,7 +317,7 @@ estimators.append(('mlp', KerasClassifier(build_fn=create_smaller, epochs=100, b
 pipeline = Pipeline(estimators)
 kfold = StratifiedKFold(n_splits=10, shuffle=True)
 results = cross_val_score(pipeline, X, encoded_Y, cv=kfold)
-print("Smaller: %.2f%% (%.2f%%)" % (results.mean()*100, results.std()*100))
+print("Smaller : %.2f%% (%.2f%%)" % (results.mean()*100, results.std()*100))
 
 
 # larger model
@@ -338,7 +336,7 @@ estimators.append(('mlp', KerasClassifier(build_fn=create_larger, epochs=100, ba
 pipeline = Pipeline(estimators)
 kfold = StratifiedKFold(n_splits=10, shuffle=True)
 results = cross_val_score(pipeline, X, encoded_Y, cv=kfold)
-print("Larger: %.2f%% (%.2f%%)" % (results.mean()*100, results.std()*100))
+print("Larger : %.2f%% (%.2f%%)" % (results.mean()*100, results.std()*100))
 
 
 
@@ -426,6 +424,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import sklearn.datasets
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+import tensorflow as tf
+from tensorflow import keras
 
 breast_cancer_dataset = sklearn.datasets.load_breast_cancer()
 print(breast_cancer_dataset)
@@ -463,14 +464,11 @@ print(Y)
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=2)
 print(X.shape, X_train.shape, X_test.shape)
 
-from sklearn.preprocessing import StandardScaler
 scaler = StandardScaler()
 X_train_std = scaler.fit_transform(X_train)
 X_test_std = scaler.transform(X_test)
 
-import tensorflow as tf
 tf.random.set_seed(3)
-from tensorflow import keras
 
 model = keras.Sequential([
                           keras.layers.Flatten(input_shape=(30,)),
@@ -486,20 +484,20 @@ history = model.fit(X_train_std, Y_train, validation_split=0.1, epochs=10)
 
 plt.plot(history.history['accuracy'])
 plt.plot(history.history['val_accuracy'])
-plt.title('model accuracy')
-plt.ylabel('accuracy')
-plt.xlabel('epoch')
+plt.title('MODEL ACCURACY')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
 plt.legend(['training data', 'validation data'], loc = 'lower right')
 
 plt.plot(history.history['loss'])
 plt.plot(history.history['val_loss'])
-plt.title('model loss')
-plt.ylabel('loss')
-plt.xlabel('epoch')
+plt.title('MODEL LOSS')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
 plt.legend(['training data', 'validation data'], loc = 'upper right')
 
 loss, accuracy = model.evaluate(X_test_std, Y_test)
-print(accuracy)
+print(f'\nAccuracy : {accuracy}')
 
 
 
@@ -511,6 +509,9 @@ PRACTICAL No.6 (CNN)
 #Implementation of convolutional neural network to predict numbers from number images
 
 import tensorflow as tf
+import matplotlib.pyplot as plt
+import tensorflow.keras.layers as KL
+import tensorflow.keras.models as KM
 
 mnist = tf.keras.datasets.mnist
 
@@ -535,10 +536,6 @@ plt.imshow(X_train[2], cmap=plt.cm.binary)
 
 print(X_train[2])
 
-import tensorflow as tf
-import tensorflow.keras.layers  as KL
-import tensorflow.keras.models  as KM
-
 ## Model
 inputs = KL.Input(shape=(28, 28, 1))
 c = KL.Conv2D(32, (3, 3), padding="valid", activation=tf.nn.relu)(inputs)
@@ -550,13 +547,15 @@ d = KL.Dropout(0.5)(m)
 c = KL.Conv2D(128, (3, 3), padding="valid", activation=tf.nn.relu)(d)
 f = KL.Flatten()(c)
 outputs = KL.Dense(10, activation=tf.nn.softmax)(f)
+
 model = KM.Model(inputs, outputs)
 model.summary()
 model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
 
 model.fit(X_train, y_train, epochs=5)
+
 test_loss, test_acc = model.evaluate(X_test, y_test)
-print("Test Loss: {0} - Test Acc: {1}".format(test_loss, test_acc))
+print("\nTest Loss : {0} \nTest Accuracy : {1}".format(test_loss, test_acc))
 
 
 
@@ -597,9 +596,8 @@ rnn_model.summary()
 
 rnn_history = rnn_model.fit(train_images, train_labels, epochs=5, batch_size=64,
                             validation_data=(test_images, test_labels))
-
 test_loss, test_acc = rnn_model.evaluate(test_images, test_labels)
-print(f'RNN Test Accuracy: {test_acc}')
+print(f'\nRNN Test Accuracy : {test_acc}')
 
 
 
@@ -611,12 +609,13 @@ PRACTICAL NO. 8 (LSTM)
 #Text classification of moviie review using BI LSTM
 
 import numpy as np
+from keras.datasets import imdb
 from keras.models import Sequential
 from keras.preprocessing import sequence
 from keras.layers import Dropout
-from keras.layers import  Dense, Embedding, LSTM, Bidirectional
+from keras.layers import Dense, Embedding, LSTM, Bidirectional
+from matplotlib import pyplot
 
-from keras.datasets import imdb
 (x_train, y_train),(x_test, y_test) = imdb.load_data(num_words=10000)
 
 max_len = 200
@@ -630,7 +629,6 @@ x_train.shape, y_train.shape
 x_test.shape, y_test.shape
 
 n_unique_words= 10000
-
 model = Sequential()
 model.add(Embedding(n_unique_words, 128, input_length=max_len))
 model.add(Bidirectional(LSTM(64)))
@@ -644,9 +642,9 @@ history=model.fit(x_train, y_train,
            validation_data=[x_test, y_test])
 
 print(history.history['loss'])
+
 print(history.history['accuracy'])
 
-from matplotlib import pyplot
 pyplot.plot(history.history['loss'])
 pyplot.plot(history.history['accuracy'])
 pyplot.title('model loss vs accuracy')
